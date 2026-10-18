@@ -1,0 +1,21 @@
+name: LimitShop
+version: '${project.version}'
+main: dev.limitshop.LimitShopPlugin
+description: In-game managed shops with stock limits, a daily offer, Vault currency and gradual debt repossession.
+author: frank
+api-version: '${paper.api.version}'
+softdepend: [Vault]
+
+commands:
+  limitshop:
+    description: Open the shop, or manage shops.
+    usage: /limitshop help
+    aliases: [shop, ls]
+
+permissions:
+  limitshop.use:
+    description: Use shops, buy items, check your balance and pay debt.
+    default: true
+  limitshop.admin:
+    description: Create and manage shops, offers, stock and player balances.
+    default: op

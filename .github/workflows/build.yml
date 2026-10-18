@@ -1,0 +1,59 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      paper_version:
+        description: 'Paper version (26.2, 26.3, latest, ...)'
+        required: false
+        default: '26.2'
+  schedule:
+    # Try the newest Paper release every Monday.
+    - cron: '0 4 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Resolve build target
+        id: target
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_VERSION: ${{ github.event.inputs.paper_version }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -n "$REQUESTED_VERSION" ]; then
+            printf 'version=%s\n' "$REQUESTED_VERSION" >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT_NAME" = "schedule" ]; then
+            echo "version=latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=26.2" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build
+        env:
+          PAPER_VERSION: ${{ steps.target.outputs.version }}
+        run: ./scripts/build-paper.sh "$PAPER_VERSION"
+
+      - name: Upload jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: LimitShop-paper-${{ steps.target.outputs.version }}
+          path: target/LimitShop-*.jar
+          if-no-files-found: error
